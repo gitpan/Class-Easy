@@ -1,0 +1,13 @@
+Changes
+lib/Class/Easy.pm
+lib/Class/Easy/Timer.pm
+lib/Class/Easy/Log.pm
+Makefile.PL
+MANIFEST
+META.yml			Module meta-data (added by MakeMaker)
+README
+t/000-accessor.t
+t/001-timer.t
+t/002-log.t
+t/003-speed-and-mem-usage.t
+t/004-strict-warnings.t
