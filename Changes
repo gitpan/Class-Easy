@@ -1,5 +1,13 @@
 2009-02-12	Ivan Baktsheev <dot.and.thing@gmail.com>
 
-	Release 0.1
+	Release 0.02
+
+	removed one test for crossplatform testing
+	
+	api change: require_package => try_to_use
+
+2009-02-12	Ivan Baktsheev <dot.and.thing@gmail.com>
+
+	Release 0.01
 
 	Initial revision

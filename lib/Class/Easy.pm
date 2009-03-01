@@ -1,8 +1,8 @@
 package Class::Easy;
-# $Id: Easy.pm,v 1.6 2009/02/16 17:36:41 apla Exp $
+# $Id: Easy.pm,v 1.2 2009/03/01 09:07:04 apla Exp $
 
 use vars qw($VERSION);
-$VERSION = '0.01';
+$VERSION = '0.02';
 
 use strict;
 use warnings;
@@ -14,7 +14,7 @@ require Class::Easy::Timer;
 
 use File::Spec ();
 
-our @EXPORT = qw(has require_package make_accessor set_field_values timer attach_paths);
+our @EXPORT = qw(has try_to_use make_accessor set_field_values timer attach_paths);
 
 our %EXPORT_FOREIGN = (
 	'Class::Easy::Log' => [qw(debug critical debug_depth)],
@@ -134,12 +134,12 @@ sub _has_error {
 	die "too many parameters ($argc) for accessor $caller\->$name at $acc_caller line $line.\n";
 }
 
-sub require_package {
+sub try_to_use {
 	my @chunks = @_;
 	
-	my $package = join '::', @chunks;
-	@chunks  = split '::', $package;
-	my $path = join ('/', @chunks) . '.pm';
+	my $package = join  '::', @chunks;
+	@chunks     = split '::', $package;
+	my $path    = join ('/', @chunks) . '.pm';
 	
 	unless (exists $INC{$path}) {
 		eval "use $package";
