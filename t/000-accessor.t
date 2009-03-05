@@ -14,7 +14,7 @@ my $circle = My::Circle->new;
 $circle->dim_x (2);
 $circle->dim_y (3);
 
-warn Dumper $circle;
+#diag Dumper $circle;
 
 ok $circle->dim_x == 2;
 ok $circle->dim_y == 3;
@@ -49,7 +49,7 @@ ok scalar keys %{$circle->global_hash_rw};
 
 # die;
 
-warn Dumper $circle->global_hash_rw;
+# diag Dumper $circle->global_hash_rw;
 
 my $sphere = My::Sphere->new;
 $sphere->dim_x (2);

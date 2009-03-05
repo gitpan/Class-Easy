@@ -1,8 +1,8 @@
 package Class::Easy;
-# $Id: Easy.pm,v 1.2 2009/03/01 09:07:04 apla Exp $
+# $Id: Easy.pm,v 1.8 2009/03/01 09:13:51 apla Exp $
 
 use vars qw($VERSION);
-$VERSION = '0.02';
+$VERSION = '0.03';
 
 use strict;
 use warnings;

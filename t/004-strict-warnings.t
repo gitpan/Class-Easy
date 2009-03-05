@@ -25,7 +25,7 @@ diag $str;
 undef $err;
 untie *STDERR;
 
-ok $str, "warnings is turned on by Class::Easy; warning is: $err";
+ok $str; #, "warnings is turned on by Class::Easy; warning is: $err";
 
 # ok ! $^W, "warnings is not turned on globally";
 

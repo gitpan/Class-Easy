@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:               Class-Easy
-version:            0.02
+version:            0.03
 abstract:           ~
 author:
     - Ivan Baktsheev <dot.and.thing@gmail.com>
@@ -11,6 +11,7 @@ configure_requires:
 requires:
     File::Spec:   0
     IO::Scalar:   0
+    perl:         
     Time::HiRes:  0
 no_index:
     directory:

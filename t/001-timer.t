@@ -1,13 +1,10 @@
 #!/usr/bin/perl
 
-use warnings;
-use strict;
+use Class::Easy;
 
 use Test::More qw(no_plan);
 
 use Data::Dumper;
-
-use Class::Easy;
 
 # without Class::Easy::DEBUG
 my $t = timer ('sleep one second');
