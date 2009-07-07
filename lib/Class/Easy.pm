@@ -1,8 +1,8 @@
 package Class::Easy;
-# $Id: Easy.pm,v 1.8 2009/03/01 09:13:51 apla Exp $
+# $Id: Easy.pm,v 1.9 2009/07/07 21:48:07 apla Exp $
 
 use vars qw($VERSION);
-$VERSION = '0.03';
+$VERSION = '0.04';
 
 use strict;
 use warnings;
@@ -141,12 +141,18 @@ sub try_to_use {
 	@chunks     = split '::', $package;
 	my $path    = join ('/', @chunks) . '.pm';
 	
-	unless (exists $INC{$path}) {
+	no strict qw(refs);
+	
+	local $@;
+	
+	if (! exists $INC{$path} or ! eval ("scalar grep {!/\\w+\:\:/} keys \%$package\::;")) {
 		eval "use $package";
 	}
 	
+	use strict qw(refs);
+	
 	if ($@) {
-		warn "i can't load module ($path): $@";
+		Class::Easy::Log::debug ("i can't load module ($path): $@");
 		return;
 	}
 	

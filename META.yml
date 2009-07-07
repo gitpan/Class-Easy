@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:               Class-Easy
-version:            0.03
+version:            0.04
 abstract:           ~
 author:
     - Ivan Baktsheev <dot.and.thing@gmail.com>
@@ -8,16 +8,19 @@ license:            unknown
 distribution_type:  module
 configure_requires:
     ExtUtils::MakeMaker:  0
+build_requires:
+    ExtUtils::MakeMaker:  0
 requires:
-    File::Spec:   0
-    IO::Scalar:   0
-    perl:         
-    Time::HiRes:  0
+    ExtUtils::MakeMaker:  6.48
+    File::Spec:           0
+    IO::Scalar:           0
+    perl:                 
+    Time::HiRes:          0
 no_index:
     directory:
         - t
         - inc
-generated_by:       ExtUtils::MakeMaker version 6.48
+generated_by:       ExtUtils::MakeMaker version 6.52
 meta-spec:
     url:      http://module-build.sourceforge.net/META-spec-v1.4.html
     version:  1.4

@@ -1,4 +1,5 @@
-use ExtUtils::MakeMaker;
+use 5.008006;
+use ExtUtils::MakeMaker 6.48;
 
 WriteMakefile(
 	NAME => "Class::Easy",
@@ -10,5 +11,6 @@ WriteMakefile(
 		'IO::Scalar'    => 0,
 		'File::Spec'    => 0,
 		'Time::HiRes'   => 0,
+		'ExtUtils::MakeMaker' => 6.48,
 	}
 );
