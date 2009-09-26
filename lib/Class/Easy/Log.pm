@@ -1,5 +1,5 @@
 package Class::Easy::Log;
-# $Id: Log.pm,v 1.1 2008/08/31 14:48:31 apla Exp $
+# $Id: Log.pm,v 1.3 2009/07/20 18:00:10 apla Exp $
 
 use strict;
 use warnings;

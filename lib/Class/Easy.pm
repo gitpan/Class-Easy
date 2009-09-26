@@ -1,5 +1,5 @@
 package Class::Easy;
-# $Id: Easy.pm,v 1.9 2009/07/07 21:48:07 apla Exp $
+# $Id: Easy.pm,v 1.4 2009/07/20 18:00:12 apla Exp $
 
 use vars qw($VERSION);
 $VERSION = '0.04';

@@ -1,5 +1,5 @@
 package Class::Easy::Timer;
-# $Id: Timer.pm,v 1.2 2009/01/22 07:03:55 apla Exp $
+# $Id: Timer.pm,v 1.3 2009/07/20 18:00:10 apla Exp $
 
 use strict;
 use warnings;
