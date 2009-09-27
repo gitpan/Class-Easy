@@ -2,7 +2,7 @@ package Class::Easy;
 # $Id: Easy.pm,v 1.4 2009/07/20 18:00:12 apla Exp $
 
 use vars qw($VERSION);
-$VERSION = '0.04';
+$VERSION = '0.05';
 
 use strict;
 use warnings;

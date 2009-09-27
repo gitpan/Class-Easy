@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:               Class-Easy
-version:            0.04
+version:            0.05
 abstract:           ~
 author:
     - Ivan Baktsheev <dot.and.thing@gmail.com>
@@ -14,7 +14,7 @@ requires:
     ExtUtils::MakeMaker:  6.48
     File::Spec:           0
     IO::Scalar:           0
-    perl:                 
+    perl:                 5.008006
     Time::HiRes:          0
 no_index:
     directory:
