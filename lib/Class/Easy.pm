@@ -2,7 +2,7 @@ package Class::Easy;
 # $Id: Easy.pm,v 1.4 2009/07/20 18:00:12 apla Exp $
 
 use vars qw($VERSION);
-$VERSION = '0.05';
+$VERSION = '0.06';
 
 use strict;
 use warnings;
@@ -14,7 +14,7 @@ require Class::Easy::Timer;
 
 use File::Spec ();
 
-our @EXPORT = qw(has try_to_use make_accessor set_field_values timer attach_paths);
+our @EXPORT = qw(has try_to_use try_to_use_quiet make_accessor set_field_values timer attach_paths);
 
 our %EXPORT_FOREIGN = (
 	'Class::Easy::Log' => [qw(debug critical debug_depth)],
@@ -136,6 +136,12 @@ sub _has_error {
 
 sub try_to_use {
 	my @chunks = @_;
+
+	my $verbose = 1;
+	if ($chunks[-1] eq '--quiet') {
+		$verbose = 0;
+		pop @chunks;
+	}
 	
 	my $package = join  '::', @chunks;
 	@chunks     = split '::', $package;
@@ -145,18 +151,27 @@ sub try_to_use {
 	
 	local $@;
 	
-	if (! exists $INC{$path} or ! eval ("scalar grep {!/\\w+\:\:/} keys \%$package\::;")) {
+	# we removed "or ! exists $INC{$path}" statement because
+	# "used" package always available via symbol table
+	if (eval ("scalar grep {!/\\w+\:\:/} keys \%$package\::;") == 0) {
 		eval "use $package";
+	} else {
+		return 1;
 	}
 	
 	use strict qw(refs);
 	
 	if ($@) {
-		Class::Easy::Log::debug ("i can't load module ($path): $@");
+		Class::Easy::Log::debug ("i can't load module ($path): $@")
+			if $verbose;
 		return;
 	}
 	
 	return 1;
+}
+
+sub try_to_use_quiet {
+	return try_to_use (@_, '--quiet');
 }
 
 sub attach_paths {

@@ -9,6 +9,14 @@ use Data::Dumper;
 
 use_ok ('Class::Easy');
 
+$Class::Easy::DEBUG = 'immediately';
+
+ok try_to_use_quiet ('My', 'Circle');
+
+my $use_result = try_to_use_quiet ('My', 'Circle', 'QEWRQWERTQWETQWERQWERWER');
+
+ok ! defined $use_result;
+
 my $circle = My::Circle->new;
 
 $circle->dim_x (2);
