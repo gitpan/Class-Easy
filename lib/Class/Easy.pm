@@ -2,19 +2,19 @@ package Class::Easy;
 # $Id: Easy.pm,v 1.4 2009/07/20 18:00:12 apla Exp $
 
 use vars qw($VERSION);
-$VERSION = '0.06';
+$VERSION = '0.07';
 
 use strict;
 use warnings;
 
 no strict qw(refs);
-no warnings qw(redefine);
+no warnings qw(redefine once);
 
 require Class::Easy::Timer;
 
 use File::Spec ();
 
-our @EXPORT = qw(has try_to_use try_to_use_quiet make_accessor set_field_values timer attach_paths);
+our @EXPORT = qw(has try_to_use try_to_use_quiet try_to_use_inc try_to_use_inc_quiet make_accessor set_field_values timer attach_paths);
 
 our %EXPORT_FOREIGN = (
 	'Class::Easy::Log' => [qw(debug critical debug_depth)],
@@ -79,8 +79,6 @@ sub make_accessor ($;$;$;%) {
 	die "unknown accessor type: $is"
 		unless $is =~ /^r[ow]$/;
 	
-	no strict 'refs';
-	
 	my $full_ref = "${caller}::$name";
 	
 	if (ref $default eq 'CODE') {
@@ -134,44 +132,55 @@ sub _has_error {
 	die "too many parameters ($argc) for accessor $caller\->$name at $acc_caller line $line.\n";
 }
 
-sub try_to_use {
-	my @chunks = @_;
+sub _try_to_use {
+	my $use_lib = shift;
+	my $quiet   = shift;
+	my @chunks  = @_;
 
-	my $verbose = 1;
-	if ($chunks[-1] eq '--quiet') {
-		$verbose = 0;
-		pop @chunks;
-	}
-	
 	my $package = join  '::', @chunks;
 	@chunks     = split '::', $package;
 	my $path    = join ('/', @chunks) . '.pm';
 	
-	no strict qw(refs);
-	
 	local $@;
 	
-	# we removed "or ! exists $INC{$path}" statement because
-	# "used" package always available via symbol table
-	if (eval ("scalar grep {!/\\w+\:\:/} keys \%$package\::;") == 0) {
-		eval "use $package";
+	if ($use_lib) {
+		return 1
+			if exists $INC{$path};
 	} else {
-		return 1;
+		# OLD: we removed "or ! exists $INC{$path}" statement because
+		# "used" package always available via symbol table
+		if (eval ("scalar grep {!/\\w+\:\:/} keys \%$package\::;") > 0) {
+			return 1;
+		}
 	}
+	
+	eval "use $package";
 	
 	use strict qw(refs);
 	
 	if ($@) {
 		Class::Easy::Log::debug ("i can't load module ($path): $@")
-			if $verbose;
+			unless $quiet;
 		return;
 	}
 	
 	return 1;
 }
 
+sub try_to_use {
+	return _try_to_use (0, 0, @_);
+}
+
 sub try_to_use_quiet {
-	return try_to_use (@_, '--quiet');
+	return _try_to_use (0, 1, @_);
+}
+
+sub try_to_use_inc {
+	return _try_to_use (1, 0, @_);
+}
+
+sub try_to_use_inc_quiet {
+	return _try_to_use (1, 1, @_);
 }
 
 sub attach_paths {
@@ -229,9 +238,20 @@ easy logging and timer for easy development.
 SYNOPSIS
 
 	use Class::Easy; # automatic loading of strict and warnings
-
-	has "property"; # make object accessor
-	has "global", global => 1; # make global accessor
+	
+	# try to load package IO::Easy, return 1 when success
+	try_to_use ('IO::Easy');
+	
+	# try to load package IO::Easy, but search for package existence
+	# within %INC instead of symbolic table
+	try_to_use_inc ('IO::Easy');
+	
+	# for current package
+	has "property_ro"; # make readonly object accessor
+	has "property_rw", is => 'rw'; # make readwrite object accessor
+	
+	has "global25", default => 25; # make readonly static accessor with value 25
+	has "global", global => 1, is => 'rw'; # make readwrite static accessor
 
 	# make subroutine in package main
 	make_accessor ('main', 'initialize', default => sub {
@@ -263,13 +283,13 @@ SYNOPSIS
 
 =head1 FUNCTIONS
 
-=head2 has
+=head2 has ($name [, is => 'ro' | 'rw'] [, default => $default], [, global => 1])
 
-create accessor in current scope
+create accessor named $name in current scope
 
 =cut
 
-=head2 make_accessors
+=head2 make_accessor ($scope, $name)
 
 create accessor in selected scope
 

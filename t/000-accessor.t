@@ -17,6 +17,14 @@ my $use_result = try_to_use_quiet ('My', 'Circle', 'QEWRQWERTQWETQWERQWERWER');
 
 ok ! defined $use_result;
 
+make_accessor ('My::Circle::QEWRQWERTQWETQWERQWERWER', 'aaa', default => sub {return 1;});
+
+# symbolic table now have one or more records for this package, ok
+ok try_to_use_quiet ('My', 'Circle', 'QEWRQWERTQWETQWERQWERWER');
+
+# but package not exists within %INC
+ok ! try_to_use_inc_quiet ('My', 'Circle', 'QEWRQWERTQWETQWERQWERWER');
+
 my $circle = My::Circle->new;
 
 $circle->dim_x (2);
