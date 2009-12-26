@@ -1,3 +1,9 @@
+2009-11-26	Ivan Baktsheev <dot.and.thing@gmail.com>
+
+	Release 0.08
+	
+	changed test for bad testrs who doesn't have a proper system timer
+
 2009-11-25	Ivan Baktsheev <dot.and.thing@gmail.com>
 
 	Release 0.07
