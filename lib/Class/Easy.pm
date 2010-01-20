@@ -1,8 +1,7 @@
 package Class::Easy;
-# $Id: Easy.pm,v 1.4 2009/07/20 18:00:12 apla Exp $
 
 use vars qw($VERSION);
-$VERSION = '0.08';
+$VERSION = '0.09';
 
 use strict;
 use warnings;
@@ -62,12 +61,19 @@ sub has ($;%) {
 sub make_accessor ($;$;$;%) {
 	my $caller = shift;
 	my $name   = shift;
+	
+	my $default;
+	
+	$default = shift
+		if scalar @_ == 1;
+	
 	die caller if scalar @_ % 2;
 	my %config = @_;
 	
 	my $isa     = $config{isa};
 	my $is      = $config{is} || 'ro';
-	my $default = $config{default};
+	$default    = $config{default}
+		if exists $config{default};
 	
 	$config{global} = 1
 		if defined $default and $is eq 'ro';
@@ -141,7 +147,7 @@ sub _try_to_use {
 	@chunks     = split '::', $package;
 	my $path    = join ('/', @chunks) . '.pm';
 	
-	local $@;
+	$@ = '';
 	
 	if ($use_lib) {
 		return 1
@@ -181,6 +187,12 @@ sub try_to_use_inc {
 
 sub try_to_use_inc_quiet {
 	return _try_to_use (1, 1, @_);
+}
+
+sub cannot_locate {
+	my $error = shift;
+	return 1 if $error =~ /Can't locate [^\.]+\.pm in \@INC/ms;
+	return 0;
 }
 
 sub attach_paths {

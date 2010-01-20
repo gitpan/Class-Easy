@@ -17,6 +17,8 @@ my $use_result = try_to_use_quiet ('My', 'Circle', 'QEWRQWERTQWETQWERQWERWER');
 
 ok ! defined $use_result;
 
+ok Class::Easy::cannot_locate ($@);
+
 make_accessor ('My::Circle::QEWRQWERTQWETQWERQWERWER', 'aaa', default => sub {return 1;});
 
 # symbolic table now have one or more records for this package, ok
@@ -26,6 +28,8 @@ ok try_to_use_quiet ('My', 'Circle', 'QEWRQWERTQWETQWERQWERWER');
 ok ! try_to_use_inc_quiet ('My', 'Circle', 'QEWRQWERTQWETQWERQWERWER');
 
 my $circle = My::Circle->new;
+
+ok $circle->new_default eq 'new_default';
 
 $circle->dim_x (2);
 $circle->dim_y (3);
@@ -108,6 +112,7 @@ BEGIN {
 	has 'dim_y', is => 'rw';
 	has 'global_hash', default => {};
 	has 'global_hash_rw', is => 'rw', global => 1;
+	has new_default => 'new_default';
 };
 
 sub new {

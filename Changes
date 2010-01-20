@@ -1,3 +1,10 @@
+2010-01-20	Ivan Baktsheev <dot.and.thing@gmail.com>
+
+	Release 0.09
+	
+	added ability to easy detection "can't locate" use errors
+	added easy interface for accessor default value
+
 2009-11-26	Ivan Baktsheev <dot.and.thing@gmail.com>
 
 	Release 0.08
