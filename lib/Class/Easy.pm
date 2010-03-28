@@ -1,7 +1,7 @@
 package Class::Easy;
 
 use vars qw($VERSION);
-$VERSION = '0.09';
+$VERSION = '0.11';
 
 use strict;
 use warnings;
@@ -202,16 +202,16 @@ sub attach_paths {
 	
 	my $FS = 'File::Spec';
 	
-	my $pack_path = $FS->join (@pack_chunks) . '.pm';
+	my $pack_path = join ('/', @pack_chunks) . '.pm';
 	my $pack_inc_path = $INC{$pack_path};
+
+	$pack_path = $FS->canonpath ($pack_path);
 	
-	my $pack_abs_path = $FS->rel2abs ($pack_inc_path);
-	
+	my $pack_abs_path = $FS->rel2abs ($FS->canonpath ($pack_inc_path));
 	make_accessor ($class, 'package_path', default => $pack_abs_path);
 	
-	make_accessor ($class, 'lib_path', default => $FS->canonpath (
-		$pack_abs_path =~ /(.*)$pack_path$/
-	));
+	my $lib_path = substr ($pack_abs_path, 0, rindex ($pack_abs_path, $pack_path));
+	make_accessor ($class, 'lib_path', default => $FS->canonpath ($lib_path));
 }
 
 sub list_subs {

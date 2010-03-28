@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:               Class-Easy
-version:            0.09
+version:            0.11
 abstract:           ~
 author:
     - Ivan Baktsheev <dot.and.thing@gmail.com>
@@ -16,6 +16,11 @@ requires:
     IO::Scalar:           0
     perl:                 5.008006
     Time::HiRes:          0
+resources:
+    bugtracker:  http://rt.cpan.org/NoAuth/Bugs.html?Dist=Class-Easy
+    homepage:    http://perlhug.com
+    license:     http://dev.perl.org/licenses/
+    repository:  git://web-app.git.sourceforge.net/gitroot/perl-easy/perl-easy
 no_index:
     directory:
         - t
