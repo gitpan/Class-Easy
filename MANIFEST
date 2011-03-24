@@ -2,6 +2,7 @@ Changes
 lib/Class/Easy.pm
 lib/Class/Easy/Timer.pm
 lib/Class/Easy/Log.pm
+lib/Class/Easy/Log/Tie.pm
 Makefile.PL
 MANIFEST
 META.yml			Module meta-data (added by MakeMaker)

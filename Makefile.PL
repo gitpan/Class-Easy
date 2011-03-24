@@ -17,9 +17,9 @@ WriteMakefile(
 		},
 	},
 	PREREQ_PM => {
-		'IO::Scalar'    => 0,
 		'File::Spec'    => 0,
 		'Time::HiRes'   => 0,
+		# this cannot be changed because of availability MIN_PERL_VERSION and OS X fixes
 		'ExtUtils::MakeMaker' => '6.48',
 	}
 );

@@ -10,17 +10,26 @@ eval "
 
 ok $@, "strict is turned on by Class::Easy";
 
-use IO::Scalar;
+use Class::Easy::Log::Tie;
 
 my $str;
-my $err = tie *STDERR, 'IO::Scalar', \$str;
+my $err = tie *STDERR => 'Class::Easy::Log::Tie', \$str;
 
 eval "
 	my \@a = (1);
 	my \$aaa = \@a[0];
 ";
 
-diag $str;
+# Scalar value @a[0] better written as $a[0] at (eval 15) line 3.
+ok $str =~ /\@a\[0\]/; 
+
+logger ('debug')->appender (*STDERR);
+
+debug "debug test"; # string # 28
+
+ok $str =~ /\[$$\] \[main\(\d+\)\] \[debug\] debug test/m, $str;
+
+print $str;
 
 undef $err;
 untie *STDERR;

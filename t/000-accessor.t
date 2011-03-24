@@ -9,13 +9,15 @@ use Data::Dumper;
 
 use_ok ('Class::Easy');
 
-$Class::Easy::DEBUG = 'immediately';
+logger ('debug')->appender (*STDERR);
 
 ok try_to_use_quiet ('My', 'Circle');
 
 my $use_result = try_to_use_quiet ('My', 'Circle', 'QEWRQWERTQWETQWERQWERWER');
 
 ok ! defined $use_result;
+
+# diag $!;
 
 ok Class::Easy::cannot_locate ($@);
 
@@ -48,6 +50,10 @@ ok ! defined $circle->global_hash_rw;
 
 $circle->global_hash_rw ({'aaa' => 'aaa'});
 ok $circle->global_hash_rw->{'aaa'} eq 'aaa';
+
+$circle->global_hash_rw_default ({'aaa' => 'aaa'});
+ok $circle->global_hash_rw_default->{'aaa'} eq 'aaa';
+
 
 eval {$circle->id (1);};
 ok $@ =~ /^too many parameters/, "ERROR: $@";
@@ -112,6 +118,7 @@ BEGIN {
 	has 'dim_y', is => 'rw';
 	has 'global_hash', default => {};
 	has 'global_hash_rw', is => 'rw', global => 1;
+	has 'global_hash_rw_default', is => 'rw', global => 1, default => {ccc => 'ddd'};
 	has new_default => 'new_default';
 };
 

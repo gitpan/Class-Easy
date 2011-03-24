@@ -1,7 +1,7 @@
 package Class::Easy;
 
 use vars qw($VERSION);
-$VERSION = '0.11';
+$VERSION = '0.12';
 
 use strict;
 use warnings;
@@ -16,8 +16,8 @@ use File::Spec ();
 our @EXPORT = qw(has try_to_use try_to_use_quiet try_to_use_inc try_to_use_inc_quiet make_accessor set_field_values timer attach_paths);
 
 our %EXPORT_FOREIGN = (
-	'Class::Easy::Log' => [qw(debug critical debug_depth)],
-	# 'Class::Easy::Timer' => [qw(timer)],
+	'Class::Easy::Log' => [qw(debug critical debug_depth logger)],
+	'Class::Easy::Timer' => [qw(timer)],
 );
 
 our $LOG = '';
@@ -67,7 +67,8 @@ sub make_accessor ($;$;$;%) {
 	$default = shift
 		if scalar @_ == 1;
 	
-	die caller if scalar @_ % 2;
+	die 'bad call from: ' . join (', ', caller)
+		if scalar @_ % 2;
 	my %config = @_;
 	
 	my $isa     = $config{isa};
@@ -150,13 +151,13 @@ sub _try_to_use {
 	$@ = '';
 	
 	if ($use_lib) {
-		return 1
+		return "exists in \%INC"
 			if exists $INC{$path};
 	} else {
 		# OLD: we removed "or ! exists $INC{$path}" statement because
 		# "used" package always available via symbol table
 		if (eval ("scalar grep {!/\\w+\:\:/} keys \%$package\::;") > 0) {
-			return 1;
+			return "exists in symbol table";
 		}
 	}
 	
