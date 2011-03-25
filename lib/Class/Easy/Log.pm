@@ -41,7 +41,10 @@ my $java_mappings = {
 	T => 'stack',
 };
 
-
+our $hostname;
+if (Class::Easy::try_to_use ('Sys::Hostname')) {
+	$hostname = Sys::Hostname->can('hostname')->();
+}
 
 Class::Easy::Log->configure_driver (
 	id => 'log4perl', package => 'Log::Log4perl', constructor => 'get_logger',
@@ -52,7 +55,7 @@ Class::Easy::Log->configure_driver (
 # basic logger:    logger ('sql');
 # log4perl logger: logger (log4perl => 'sql');
 # also you'll need to configure log4perl somewhere:
-# Log::Log4perl::init (…);
+# Log::Log4perl::init (...);
 # Class::Easy::Log->configure_driver (
 #	type => 'log4perl', package => 'Log::Log4perl', constructor => 'get_logger'
 # );
@@ -61,10 +64,9 @@ sub configure_driver {
 	my $class = shift;
 	my $params = {@_};
 	
-	$driver_config->{$params->{id}} = $params;
-	my $result = Class::Easy::try_to_use ($params->{package});
-	warn 'result: ' . $@
-		if $@;
+	if (Class::Easy::try_to_use ($params->{package})) {
+		$driver_config->{$params->{id}} = $params;
+	}
 }
 
 sub logger { # create logger
@@ -134,10 +136,6 @@ sub appender {
 
 }
 
-sub publish {
-#	tie *STDERR => 'Class::Easy::Log::Tie', \$str;
-}
-
 # example usage: 
 # logger (sql); # create sub log_sql
 # log_sql ('message'); # log message, but nobody receive this message
@@ -177,18 +175,35 @@ sub _parse_layout {
 
 sub _format_log {
 	my $self = shift;
+	
+	my $time = time;
+	
 	my $values = {
-		pid => $$,
+		pid      => $$,
 		category => $self->{category},
-		newline => "\n",
+		newline  => "\n",
+		ts_start => $time - $^T,
+		hostname => $hostname, # doesn't reflect hostname changes in runtime
+		date     => $time,
 		@_
 	};
+
+#	TODO: make sure all these values supported
+#	R => 'ts_log',   # use timer_${logger} instead
+#	C => 'package',  # useless, because we have %M = method
+#	F => 'file',     # who cares about script files?
+#	l => 'where',    # wtf?
+#	p => 'priority', # log level, if written not for robots
+#	T => 'stack',    # everything loves java stacks
+#	TODO: add date formatting support
 	
 #	use Data::Dumper;
 #	warn Dumper $self->{_layout_fields};
 #	warn Dumper [map {$values->{$_}} @{$self->{_layout_fields}}];
 	
-	return sprintf ($self->{_layout_format}, (map {$values->{$_}} @{$self->{_layout_fields}}));
+	return sprintf ($self->{_layout_format}, (map {
+		$values->{$_}
+	} @{$self->{_layout_fields}}));
 }
 
 sub _wrapper {
@@ -211,11 +226,11 @@ sub _wrapper {
 		# parse layout
 		$logger->_parse_layout;
 	}
-	
+		
 	$logger->{broker} = $logger->_format_log (
 		message => join ('', @_),
-		method => $sub,
-		line => $line
+		method  => $sub,
+		line    => $line
 	);
 	
 	return 1;

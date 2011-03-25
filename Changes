@@ -1,3 +1,10 @@
+2011-03-26	Ivan Baktsheev <dot.and.thing@gmail.com>
+
+	Release 0.13
+	
+	fixed multiple issues with log4perl
+	added support for more flags in logging
+
 2011-03-25	Ivan Baktsheev <dot.and.thing@gmail.com>
 
 	Release 0.12

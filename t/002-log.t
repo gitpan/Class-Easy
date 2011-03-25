@@ -2,9 +2,9 @@
 
 BEGIN {
 	use Class::Easy;
-	# $Class::Easy::DEBUG = 'immediately';
-	use IO::Easy;
-	unshift @INC, dir->current->dir_io('lib')->path;
+	if (try_to_use ('IO::Easy')) {
+		unshift @INC, IO::Easy::Dir->current->dir_io('lib')->path;
+	}
 
 	use Test::More qw(no_plan);
 
