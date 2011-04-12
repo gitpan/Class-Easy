@@ -109,13 +109,13 @@ ok $sphere->accessor eq $sphere->global_one;
 
 my $subs = Class::Easy::list_all_subs_for ($circle);
 
-ok ! exists $subs->{inherited}, 'circle is base class';
+ok keys %{$subs->{inherited}} == 1, 'now we use Class::Easy::Base as base class';
 
 # warn Dumper $subs;
 
 $subs = Class::Easy::list_all_subs_for ($sphere);
 
-ok keys %{$subs->{inherited}} == 1;
+ok keys %{$subs->{inherited}} == 2;
 ok grep {$_ eq 'global_hash_rw_default'} @{$subs->{inherited}->{'My::Circle'}};
 
 # warn Dumper $subs;
@@ -124,7 +124,7 @@ ok grep {$_ eq 'global_hash_rw_default'} @{$subs->{inherited}->{'My::Circle'}};
 
 package My::Circle;
 
-use Class::Easy;
+use Class::Easy::Base;
 
 # begin is needed because we can't actually use these packages
 BEGIN {
@@ -148,7 +148,7 @@ sub new {
 
 package My::Sphere;
 
-use Class::Easy;
+use Class::Easy::Base;
 
 use base 'My::Circle';
 
@@ -168,7 +168,7 @@ BEGIN {
 
 package My::Ellipse;
 
-use Class::Easy;
+use Class::Easy::Base;
 
 use base 'My::Circle';
 

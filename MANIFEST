@@ -1,5 +1,7 @@
 Changes
 lib/Class/Easy.pm
+lib/Class/Easy/Base.pm
+lib/Class/Easy/MRO.pm
 lib/Class/Easy/PP.pm
 lib/Class/Easy/Timer.pm
 lib/Class/Easy/Log.pm
@@ -16,3 +18,4 @@ t/001-timer.t
 t/002-log.t
 t/004-strict-warnings.t
 t/005-pod-coverage.t
+t/006-base.t

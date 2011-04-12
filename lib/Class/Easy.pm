@@ -3,7 +3,7 @@ package Class::Easy;
 # PORTIONS FROM Sub::Identify and common::sense
 
 BEGIN {
-	our $VERSION = '0.14';
+	our $VERSION = '0.15';
 	our @ISA;
 
 	use Class::Easy::Import;
@@ -68,7 +68,7 @@ sub import {
 	# probably check for try_to_use is enough
 	return
 		if defined *{"$callpkg\::try_to_use"}{CODE}
-			and sub_fullname (*{"${module}::$sub"}{CODE}) eq __PACKAGE__.'::__ANON__';
+			and sub_fullname (*{"$callpkg\::try_to_use"}{CODE}) eq __PACKAGE__.'::__ANON__';
 	
 	# export subs
 	*{"$callpkg\::$_"} = \&{"$mypkg\::$_"} foreach @EXPORT;
