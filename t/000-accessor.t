@@ -1,11 +1,10 @@
 #!/usr/bin/perl
 
-use warnings;
-use strict;
-
+use Class::Easy::Import;
 use Test::More qw(no_plan);
-
 use Data::Dumper;
+
+use Errno qw(:POSIX);
 
 use_ok ('Class::Easy');
 
@@ -17,9 +16,7 @@ my $use_result = try_to_use_quiet ('My', 'Circle', 'QEWRQWERTQWETQWERQWERWER');
 
 ok ! defined $use_result;
 
-# diag $!;
-
-ok Class::Easy::cannot_locate ($@);
+ok $!{ENOENT}; # no such file or directory
 
 make_accessor ('My::Circle::QEWRQWERTQWETQWERQWERWER', 'aaa', default => sub {return 1;});
 
@@ -28,6 +25,8 @@ ok try_to_use_quiet ('My', 'Circle', 'QEWRQWERTQWETQWERQWERWER');
 
 # but package not exists within %INC
 ok ! try_to_use_inc_quiet ('My', 'Circle', 'QEWRQWERTQWETQWERQWERWER');
+
+no warnings qw(redefine);
 
 my $circle = My::Circle->new;
 
@@ -91,6 +90,8 @@ $sphere->global_one ('test');
 
 $sphere->global_one_defined ('la-la-la');
 
+ok $sphere->can ('global_hash_rw');
+
 eval {$sphere->global_ro (1);};
 ok $@ =~ /^too many parameters/, "ERROR: $@";
 
@@ -104,14 +105,28 @@ make_accessor ('My::Sphere', 'accessor', default => sub {
 
 ok $sphere->accessor eq $sphere->global_one;
 
+# warn join ', ', Class::Easy::list_subs ('My::Sphere');
+
+my $subs = Class::Easy::list_all_subs_for ($circle);
+
+ok ! exists $subs->{inherited}, 'circle is base class';
+
+# warn Dumper $subs;
+
+$subs = Class::Easy::list_all_subs_for ($sphere);
+
+ok keys %{$subs->{inherited}} == 1;
+ok grep {$_ eq 'global_hash_rw_default'} @{$subs->{inherited}->{'My::Circle'}};
+
+# warn Dumper $subs;
+
 1;
 
 package My::Circle;
 
-use strict;
-
 use Class::Easy;
 
+# begin is needed because we can't actually use these packages
 BEGIN {
 	has 'id';
 	has 'dim_x', is => 'rw';
@@ -133,12 +148,11 @@ sub new {
 
 package My::Sphere;
 
-use strict;
-
 use Class::Easy;
 
+use base 'My::Circle';
+
 BEGIN {
-	use base 'My::Circle';
 	has 'dim_z', is => 'rw';
 	has 'global_one', is => 'rw', global => 1;
 	has 'global_one_defined', is => 'rw', global => 1, default => 'defined';
@@ -147,16 +161,15 @@ BEGIN {
 		my $self = shift;
 		
 		return $self->dim_z;
-	}
+	};
 };
+
+1;
 
 package My::Ellipse;
 
-use strict;
-
 use Class::Easy;
 
-BEGIN {
-	use base 'My::Circle';
-};
+use base 'My::Circle';
 
+1;

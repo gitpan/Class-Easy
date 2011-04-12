@@ -68,7 +68,7 @@ ok $logger->appender ();
 
 my $str2;
 
-my $err = tie *STDERR => 'Class::Easy::Log::Tie', \$str2;
+my $err = catch_stderr (\$str2);
 
 ok $logger->appender (*STDERR), 'write logs to the STDERR';
 ok log_test ($rstr);
@@ -79,6 +79,10 @@ ok log_test ('aaa');
 ok $str2 !~ /aaa/;
 
 ok $logger->appender (*STDERR);
+logger ('test');
+
+ok logger (test => *STDERR), 'simplified syntax';
+
 ok log_test ('bbb');
 ok $str2 =~ /bbb/;
 
@@ -106,10 +110,13 @@ ok ! $t->end;
 
 ok $logger->appender ();
 
-untie *STDERR;
+release_stderr;
 
 # TODO: test coderef
 
+eval {critical 'msg'};
+
+ok $@ =~ /msg/, $@;
 
 1;
 

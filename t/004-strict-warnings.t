@@ -8,20 +8,19 @@ eval "
 	\$aaa = 'bbb';
 ";
 
-ok $@, "strict is turned on by Class::Easy";
+debug $@;
+
+ok $@ =~ /Global symbol/, "strict is turned on by Class::Easy";
 
 use Class::Easy::Log::Tie;
 
 my $str;
 my $err = tie *STDERR => 'Class::Easy::Log::Tie', \$str;
 
-eval "
-	my \@a = (1);
-	my \$aaa = \@a[0];
-";
+warn $@;
 
-# Scalar value @a[0] better written as $a[0] at (eval 15) line 3.
-ok $str =~ /\@a\[0\]/; 
+# Global symbol "$aaa" requires explicit package name
+ok $str =~ /Global symbol/, $str;
 
 logger ('debug')->appender (*STDERR);
 

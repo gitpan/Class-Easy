@@ -1,13 +1,18 @@
 Changes
 lib/Class/Easy.pm
+lib/Class/Easy/PP.pm
 lib/Class/Easy/Timer.pm
 lib/Class/Easy/Log.pm
 lib/Class/Easy/Log/Tie.pm
+Easy.xs
+Import.pm.PL
 Makefile.PL
 MANIFEST
 META.yml			Module meta-data (added by MakeMaker)
+ppport.h
 README
 t/000-accessor.t
 t/001-timer.t
 t/002-log.t
 t/004-strict-warnings.t
+t/005-pod-coverage.t

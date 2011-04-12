@@ -18,7 +18,7 @@ ok 0 == $t->end;
 ok 0 == $t->total;
 
 # with Class::Easy::DEBUG
-logger ('debug')->appender (undef);
+logger ('default')->appender (undef);
 
 $t = timer ('sleep one second');
 

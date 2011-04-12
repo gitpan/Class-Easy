@@ -1,3 +1,16 @@
+	TODO: add method to control every internal logger
+
+2011-04-12	Ivan Baktsheev <dot.and.thing@gmail.com>
+
+	Release 0.14
+	
+	fixed issue with critical
+	added STDERR catch
+	fixed list_methods function
+	added simplified appender call
+	proper imported functions detection from Sub::Identify
+	optimized code for strict and warnings from common::sense
+
 2011-03-26	Ivan Baktsheev <dot.and.thing@gmail.com>
 
 	Release 0.13

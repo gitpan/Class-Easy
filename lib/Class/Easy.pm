@@ -1,23 +1,47 @@
 package Class::Easy;
 
-use vars qw($VERSION);
-$VERSION = '0.13';
+# PORTIONS FROM Sub::Identify and common::sense
 
-use strict;
-use warnings;
+BEGIN {
+	our $VERSION = '0.14';
+	our @ISA;
 
-no strict qw(refs);
-no warnings qw(redefine once);
+	use Class::Easy::Import;
+	
+	my $loaded;
+	unless ($ENV{PERL_SUB_IDENTIFY_PP}) {
+		local $@;
+		eval {
+			require XSLoader;
+			XSLoader::load(__PACKAGE__, $VERSION);
+		};
+		
+		die $@ if $@ && $@ !~ /object version|loadable object/;
+		
+		$loaded = 1 unless $@;
+	}
+	
+	our $is_pure_perl = !$loaded;
+	
+	if ($is_pure_perl) {
+		require Class::Easy::PP;
+	}
+
+}
 
 require Class::Easy::Timer;
 
-use File::Spec ();
+sub stash_name   ($) { (get_coderef_info($_[0]))[0] }
+sub sub_name     ($) { (get_coderef_info($_[0]))[1] }
+sub sub_fullname ($) { join '::', get_coderef_info($_[0]) }
 
-our @EXPORT = qw(has try_to_use try_to_use_quiet try_to_use_inc try_to_use_inc_quiet make_accessor set_field_values timer attach_paths);
+
+our @EXPORT = qw(has try_to_use try_to_use_quiet try_to_use_inc try_to_use_inc_quiet make_accessor timer);
+our @EXPORT_OK = qw(sub_name stash_name sub_fullname get_coderef_info);
 
 our %EXPORT_FOREIGN = (
-	'Class::Easy::Log' => [qw(debug critical debug_depth logger)],
-	'Class::Easy::Timer' => [qw(timer)],
+	'Class::Easy::Log' => [qw(debug critical debug_depth logger catch_stderr release_stderr)],
+#	'Class::Easy::Timer' => [qw(timer)],
 );
 
 our $LOG = '';
@@ -27,27 +51,30 @@ sub timer {
 }
 
 sub import {
-	my $mypkg = shift;
+	my $mypkg   = shift;
 	my $callpkg = caller;
 	
 	my %params = @_;
 	
-	warnings->import;
-	strict->import;
+	# use warnings
+	${^WARNING_BITS} ^= ${^WARNING_BITS} ^ $Class::Easy::Import::WARN;
 	
-	no strict 'refs';
+	# use strict, use utf8;
+	$^H |= $Class::Easy::Import::H;
+	
+	# use feature
+	$^H{feature_switch} = $^H{feature_say} = $^H{feature_state} = 1;
+	
+	# probably check for try_to_use is enough
+	return
+		if defined *{"$callpkg\::try_to_use"}{CODE}
+			and sub_fullname (*{"${module}::$sub"}{CODE}) eq __PACKAGE__.'::__ANON__';
 	
 	# export subs
 	*{"$callpkg\::$_"} = \&{"$mypkg\::$_"} foreach @EXPORT;
 	foreach my $p (keys %EXPORT_FOREIGN) {
 		*{"$callpkg\::$_"} = \&{"$p\::$_"} foreach @{$EXPORT_FOREIGN{$p}};
 	}
-	
-	use strict 'refs';
-}
-
-sub cleanup {
-	$LOG = '';
 }
 
 sub has ($;%) {
@@ -55,17 +82,18 @@ sub has ($;%) {
 	my ($caller) = caller;
 	my $accessor = shift;
 	
-	return make_accessor ($caller, $accessor, @_);
+	return make_accessor ($caller, $accessor, _unless_exists => 1, @_);
 }
 
 sub make_accessor ($;$;$;%) {
 	my $caller = shift;
 	my $name   = shift;
+
+	my $full_ref = "${caller}::$name";
 	
 	my $default;
-	
-	$default = shift
-		if scalar @_ == 1;
+	$default = pop
+		if @_ == 1 or @_ == 3; # _from_has support
 	
 	die 'bad call from: ' . join (', ', caller)
 		if scalar @_ % 2;
@@ -79,14 +107,18 @@ sub make_accessor ($;$;$;%) {
 	$config{global} = 1
 		if defined $default and $is eq 'ro';
 	
+	# when make_accessor called from has, we must check for already created
+	# accessor and redefine only if redefined flag supplied
+	if (delete $config{_unless_exists} and defined *{$full_ref}{CODE}) {
+		return;
+	}
+	
 	my $mode;
 	$mode = 1 if $is eq 'ro';
 	$mode = 2 if $is eq 'rw';
 	
 	die "unknown accessor type: $is"
 		unless $is =~ /^r[ow]$/;
-	
-	my $full_ref = "${caller}::$name";
 	
 	if (ref $default eq 'CODE') {
 		
@@ -110,7 +142,6 @@ sub make_accessor ($;$;$;%) {
 			
 			my $c = @_;
 			
-			#return &{$_[0]->{$name}} if $c == 1 and ref $_[0]->{$name} eq 'CODE';
 			return $_[0]->{$name} if $c == 1;
 			_has_error ($caller, $name, $c - 1) if $c ^ $mode;
 			
@@ -118,15 +149,6 @@ sub make_accessor ($;$;$;%) {
 
 		};
 		
-	}
-}
-
-sub set_field_values {
-	my $self   = shift;
-	my %params = @_;
-	
-	foreach my $k (keys %params) {
-		$self->$k ($params{$k});
 	}
 }
 
@@ -163,8 +185,6 @@ sub _try_to_use {
 	
 	eval "use $package";
 	
-	use strict qw(refs);
-	
 	if ($@) {
 		Class::Easy::Log::debug ("i can't load module ($path): $@")
 			unless $quiet;
@@ -190,44 +210,68 @@ sub try_to_use_inc_quiet {
 	return _try_to_use (1, 1, @_);
 }
 
-sub cannot_locate {
-	my $error = shift;
-	return 1 if $error =~ /Can't locate [^\.]+\.pm in \@INC/ms;
-	return 0;
+sub list_local_subs_for {
+	my $module = shift;
+	my $enum_imported = shift || 0;
+	
+	my $namespace = \%{$module . '::'};
+	
+	my @sub_list = grep {
+		defined *{"$module\::$_"}{CODE}
+	} keys %{$namespace};
+	
+	my $sub_by_type = {
+		method   => {},
+		imported => {},
+		runtime  => {}
+	};
+	
+	foreach my $sub (@sub_list) {
+		my ($real_package, $real_sub) = (get_coderef_info (*{"$module\::$sub"}{CODE}));
+
+		if ($real_package eq $module) {
+			$sub_by_type->{method}->{$sub} = 1;
+		} elsif ($real_sub eq '__ANON__') {
+			$sub_by_type->{runtime}->{$sub} = 1;
+		} else {
+			$sub_by_type->{imported}->{$real_package}->{$real_sub} = $sub; # who needs $real_sub ?
+		}
+	}
+	
+	wantarray
+		? (keys %{$sub_by_type->{method}}, keys %{$sub_by_type->{runtime}})
+		: $sub_by_type;
 }
 
-sub attach_paths {
-	my $class = shift;
-	
-	my @pack_chunks = split(/\:\:/, $class);
-	
-	my $FS = 'File::Spec';
-	
-	my $pack_path = join ('/', @pack_chunks) . '.pm';
-	my $pack_inc_path = $INC{$pack_path};
-
-	$pack_path = $FS->canonpath ($pack_path);
-	
-	my $pack_abs_path = $FS->rel2abs ($FS->canonpath ($pack_inc_path));
-	make_accessor ($class, 'package_path', default => $pack_abs_path);
-	
-	my $lib_path = substr ($pack_abs_path, 0, rindex ($pack_abs_path, $pack_path));
-	make_accessor ($class, 'lib_path', default => $FS->canonpath ($lib_path));
-}
-
-sub list_subs {
+sub list_all_subs_for {
 	my $module = shift || (caller)[0];
-
-	no strict 'refs';
-
-	my %internal = (map {$_ => 1} qw(BEGIN UNITCHECK CHECK INIT END CLONE CLONE_SKIP));
+	my $filter = shift || '';
 	
-	my @method_list = grep {
-		! exists $internal{$_}
-	} keys %{"${module}::"};
-
+	$module = ref $module
+		if ref $module;
 	
+	my $namespace = \%{$module . '::'};
 	
+	my $linear_isa;
+	
+	if ($] < 5.009_005) {
+		require Class::Easy::MRO;
+		$linear_isa = __get_linear_isa ($module);
+	} else {
+		require mro;
+		$linear_isa = mro::get_linear_isa ($module);
+	}
+	
+	my $sub_by_type = list_local_subs_for ($module);
+	$sub_by_type->{inherited}->{$_} = [list_local_subs_for ($_)]
+		foreach grep {$_ ne $module} @$linear_isa;
+	
+	wantarray
+		? (
+			keys %{$sub_by_type->{method}}, 
+			keys %{$sub_by_type->{runtime}},
+			map {@{$sub_by_type->{inherited}->{$_}}} keys %{$sub_by_type->{inherited}})
+		: $sub_by_type;
 }
 
 1;
@@ -242,15 +286,18 @@ This module is a functionality compilation of some good modules from CPAN.
 Ideas are taken from Class::Data::Inheritable, Class::Accessor, Modern::Perl
 and Moose at least.
 
-At the beginning I planned to create lightweight and feature-less drop-in
-alternative to Moose. Now package contains tree modules: class accessors,
-easy logging and timer for easy development.
+Instead of building monstrous alternatives to Moose or making thousand modules
+for every function I need, I decide to write small and efficient libraries for
+everyday use. Class::Easy::Base is a base component for classes.
 
 =head1 SYNOPSIS
 
 SYNOPSIS
 
-	use Class::Easy; # automatic loading of strict and warnings
+	# automatic loading of strict, warnings and utf8, like common::sense
+	use Class::Easy::Import;
+	# or same as above + functions like 'has', 'try_to_use', 'timer' and 'logger'
+	use Class::Easy;
 	
 	# try to load package IO::Easy, return 1 when success
 	try_to_use ('IO::Easy');
@@ -263,7 +310,7 @@ SYNOPSIS
 	has "property_ro"; # make readonly object accessor
 	has "property_rw", is => 'rw'; # make readwrite object accessor
 	
-	has "global25", default => 25; # make readonly static accessor with value 25
+	has global25 => 25; # make readonly static accessor with value 25
 	has "global", global => 1, is => 'rw'; # make readwrite static accessor
 
 	# make subroutine in package main
@@ -271,14 +318,13 @@ SYNOPSIS
 		$::initialized = 1;
 		return "initialized!";
 	});
-
+	
+	# see documentation for Class::Easy::Log
+	
 	# string "[PID] [PACKAGE(STRING)] [DBG] something" logged
-	# only if $Class::Easy::DEBUG = 'immediately';
 	debug "something";
 
-	# BEWARE! all timer operations are calculated only
-	# when $Class::Easy::DEBUG has true value for
-	# easy distinguishing between debug and production
+	# see documentation for Class::Easy::Timer
 
 	my $t = timer ('long operation');
 	# … long operation
@@ -307,6 +353,118 @@ create accessor named $name in current scope
 create accessor in selected scope
 
 =cut
+
+=head2 try_to_use, try_to_use_quiet
+
+tries to use specified package with printing error message to STDERR
+or "_quiet" version.
+
+return true value in case of successful operation or existing non-package
+references in symbol table. correctly works with virtual packages.
+
+takes package name or package name chunks, for example:
+
+	try_to_use ('IO::Easy');
+	# or equivalent
+	try_to_use (qw(IO Easy));
+
+if you want to separate io errors from syntax errors you may want to
+check $! variable;
+
+for example: 
+
+	use Errno qw(:POSIX);
+	
+	if (!try_to_use ('IO::Easy')) {
+		die 'file not found for package IO::Easy'
+			if $!{ENOENT};
+	}
+
+=cut
+
+=head2 try_to_use_inc, try_to_use_inc_quiet
+
+similar to the try_to_use, but check for module presence in %INC
+instead of symbol table lookup.
+
+=cut
+
+=head2 timer
+
+create new L<Class::Easy::Timer> object
+
+=cut
+
+=head2 get_coderef_info, stash_name, sub_name, sub_fullname
+
+retrieve real name for coderef. useful for anonymous or imported functions
+
+	get_coderef_info (*{Class::Easy::timer}{CODE}); # ('Class::Easy', 'timer')
+	stash_name (*{Class::Easy::timer}{CODE}); # 'Class::Easy'
+	sub_name (*{Class::Easy::timer}{CODE}); # 'timer'
+	sub_fullname (*{Class::Easy::timer}{CODE}); # 'Class::Easy::timer'
+
+=cut
+
+=head2 list_all_subs_for, list_local_subs_for
+
+in scalar context return hashref with complete coderef info for class.
+ - key 'inherited' contains all inherited methods, separated by class name,
+ - key 'runtime' contains all code references in current package which point
+to anonymous method,
+ - key 'method' contains all local methods,
+ - key 'imported' contains all imported subs, separated by class name
+
+	{
+		'inherited' => {
+			'My::Circle' => [
+				'new',
+				'global_hash',
+				'global_hash_rw',
+				'new_default',
+				'global_hash_rw_default',
+				'dim_x',
+				'id',
+				'dim_y'
+			]
+		},
+		'runtime' => {
+			'global_ro' => 1,
+			'global_one' => 1,
+			'global_one_defined' => 1,
+			'dim_z' => 1,
+			'accessor' => 1
+		},
+		'method' => {
+			'sub_z' => 1
+		},
+		'imported' => {
+			'Class::Easy' => {
+				'make_accessor' => 'make_accessor',
+				'try_to_use' => 'try_to_use',
+				'try_to_use_inc' => 'try_to_use_inc',
+				'try_to_use_quiet' => 'try_to_use_quiet',
+				'has' => 'has',
+				'timer' => 'timer',
+				'try_to_use_inc_quiet' => 'try_to_use_inc_quiet'
+			},
+			'Class::Easy::Log' => {
+				'critical' => 'critical',
+				'release_stderr' => 'release_stderr',
+				'catch_stderr' => 'catch_stderr',
+				'debug' => 'debug',
+				'debug_depth' => 'debug_depth',
+				'logger' => 'logger'
+			}
+		}
+	};
+
+'local' version of subroutine doesn't contains any inherited methods
+
+
+=cut
+
+
 
 =head1 AUTHOR
 
