@@ -22,7 +22,7 @@ sub import {
 	# probably check for try_to_use is enough
 	return
 		if defined *{"$callpkg\::try_to_use"}{CODE}
-			and sub_fullname (*{"$callpkg\::try_to_use"}{CODE}) eq 'Class::Easy::__ANON__';
+			and Class::Easy::sub_fullname (*{"$callpkg\::try_to_use"}{CODE}) eq 'Class::Easy::__ANON__';
 	
 	# export subs
 	*{"$callpkg\::$_"} = \&{"Class::Easy::$_"} foreach @Class::Easy::EXPORT;

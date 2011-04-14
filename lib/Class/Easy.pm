@@ -3,7 +3,7 @@ package Class::Easy;
 # PORTIONS FROM Sub::Identify and common::sense
 
 BEGIN {
-	our $VERSION = '0.15';
+	our $VERSION = '0.16';
 	our @ISA;
 
 	use Class::Easy::Import;
