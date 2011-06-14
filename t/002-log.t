@@ -118,5 +118,17 @@ eval {critical 'msg'};
 
 ok $@ =~ /msg/, $@;
 
+# checking for debug
+
+$str2 = '';
+
+$err = catch_stderr (\$str2);
+
+$logger = logger (default => *STDERR);
+
+debug ("hello");
+
+ok ($str2 =~ /hello/);
+
 1;
 

@@ -22,11 +22,11 @@ warn $@;
 # Global symbol "$aaa" requires explicit package name
 ok $str =~ /Global symbol/, $str;
 
-logger ('debug')->appender (*STDERR);
+logger ('default')->appender (*STDERR);
 
 debug "debug test"; # string # 28
 
-ok $str =~ /\[$$\] \[main\(\d+\)\] \[debug\] debug test/m, $str;
+ok $str =~ /\[$$\] \[main\(\d+\)\] \[default\] debug test/m, $str;
 
 print $str;
 

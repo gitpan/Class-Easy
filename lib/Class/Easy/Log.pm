@@ -5,8 +5,6 @@ use Class::Easy::Import;
 use Class::Easy::Log::Tie;
 use Class::Easy ();
 
-
-
 # log4perl has categories, layouts and appenders
 our $default_layout = '[%P] [%M(%L)] [%c] %m%n';
 
@@ -16,8 +14,8 @@ Class::Easy::make_accessor (__PACKAGE__, 'layout');
 
 my $driver_config = {};
 our $int_loggers   = {
-	debug => bless {
-		category => 'debug', broker => '', tied => 0
+	default => bless {
+		category => 'default', broker => '', tied => 0
 	}, __PACKAGE__
 };
 
@@ -259,7 +257,7 @@ sub debug {
 	my $caller1  = [caller (1)];
 	my $caller0  = [caller];
 
-	unshift @_, 'debug', $int_loggers->{debug}, $caller1, $caller0;
+	unshift @_, 'default', $int_loggers->{default}, $caller1, $caller0;
 
 	goto &_wrapper;
 }
@@ -268,7 +266,7 @@ sub debug_depth {
 	my $caller1  = [caller (2)];
 	my $caller0  = [caller (1)];
 
-	unshift @_, 'debug', $int_loggers->{debug}, $caller1, $caller0;
+	unshift @_, 'default', $int_loggers->{default}, $caller1, $caller0;
 
 	goto &_wrapper;
 }
