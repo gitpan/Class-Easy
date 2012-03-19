@@ -19,3 +19,4 @@ t/002-log.t
 t/004-strict-warnings.t
 t/005-pod-coverage.t
 t/006-base.t
+META.json                                Module JSON meta-data (added by MakeMaker)

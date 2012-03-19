@@ -8,7 +8,6 @@ our $H;
 
 BEGIN {
 	$H    = $^H;
-	$WARN = ${^WARNING_BITS};
 }
 
 use utf8;
@@ -24,7 +23,7 @@ no warnings qw(exec newline unopened);
 
 BEGIN {
 	$H    = $^H              & ~$H;
-	$WARN = ${^WARNING_BITS} & ~$WARN;
+	$WARN = ${^WARNING_BITS};
 }
 
 print "package Class::Easy::Import;
@@ -36,7 +35,7 @@ printf "our \$WARN = \"%s\";\n\n", join "", map "\\x$_", unpack "(H2)*", $WARN;
 
 print "sub import {
 	# use warnings
-	\${^WARNING_BITS} ^= \${^WARNING_BITS} ^ \$WARN;
+	\${^WARNING_BITS} = \$WARN;
 	
 	# use strict, use utf8;
 	\$^H |= \$H;

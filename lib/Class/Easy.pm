@@ -3,7 +3,7 @@ package Class::Easy;
 # PORTIONS FROM Sub::Identify and common::sense
 
 BEGIN {
-	our $VERSION = '0.17';
+	our $VERSION = '0.18';
 	our @ISA;
 
 	use Class::Easy::Import;
@@ -57,7 +57,7 @@ sub import {
 	my %params = @_;
 	
 	# use warnings
-	${^WARNING_BITS} ^= ${^WARNING_BITS} ^ $Class::Easy::Import::WARN;
+	${^WARNING_BITS} = $Class::Easy::Import::WARN;
 	
 	# use strict, use utf8;
 	$^H |= $Class::Easy::Import::H;
